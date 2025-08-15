@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: demo-framework
+  mvc:
+    problemdetails:
+      enabled: true     # (선택) Spring 6 문제세부사항 기반 오류 응답
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+
+  # OAuth2 로그인 설정은 프로필에서 provider/registration로 분리
+  security:
+    oauth2:
+      client:
+        # 여기선 빈 틀만 두고, 실제 값은 application-local.yml / -prod.yml에
+        provider: { }
+        registration: { }
+
+  # (선택) JPA/DB는 프로필 파일에서 설정
+  # datasource: ...
+  # jpa: ...
+
+server:
+  port: 8080
+  error:
+    whitelabel:
+      enabled: false
+
+# Swagger / OpenAPI
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui
+    display-operation-id: true
+    filter: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  show-actuator: true
+
+# CORS 기본(프로필에서 origin만 바꿔도 됨)
+cors:
+  allowed-origins:
+    - "http://localhost:3000"
+  allowed-methods: [ "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS" ]
+  allowed-headers: [ "Authorization", "Content-Type", "X-Requested-With" ]
+  allow-credentials: true
+
+# JWT(서버 자체 발급·검증용 커스텀 설정)
+jwt:
+  issuer: "com.example.demo"
+  access-token:
+    header: "Authorization"
+    prefix: "Bearer "
+    expiry-minutes: 30
+  refresh-token:
+    cookie-name: "REFRESH_TOKEN"
+    expiry-days: 14
+  # 대칭키(HMAC) 예시: prod에서는 반드시 환경변수/Secret Manager 사용!
+  secret: "${JWT_SECRET:change-me-in-env}"
+  # 비대칭키(RSA/EC)를 쓸 경우 public/private key 경로나 값으로 교체
+
+# Actuator (운영에선 접근 제한)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: [ "health", "info" ]
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO
