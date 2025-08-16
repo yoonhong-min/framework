@@ -8,8 +8,7 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
   jpa:
-    hibernate:
-      ddl-auto: update
+    hibernate.ddl-auto: update
     show-sql: true
 
   # h2 또는 로컬 DB
@@ -48,8 +47,8 @@ spring:
             scope: [ "profile_nickname" ]
           naver:
             provider: naver
-            client-id: ${NAVER_CLIENT_ID:__fill__}
-            client-secret: ${NAVER_CLIENT_SECRET:__fill__}
+            client-id: "wf2k8wbLSKACJ52RoBDy"
+            client-secret: "qWo3COnoUG"
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
@@ -68,3 +67,6 @@ cors:
 
 jwt:
   secret: "0def80ee27ddefc706c384ddef84316bb82edac1a5cbfe27fb69c8611977783e"
+  issuer: "framework"             # 임의의 발급자 이름
+  access-ttl-seconds: 1800        # 액세스 토큰 30분
+  refresh-ttl-seconds: 1209600    # 리프레시 14일 (60*60*24*14)

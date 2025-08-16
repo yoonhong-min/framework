@@ -17,17 +17,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtService {
 
-    @Value("${jwt.issuer}")
-    private String issuer;
-
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.access-token.expiry-minutes:30}")
-    private long accessExpiryMinutes;
-
     @Value("${jwt.refresh-token.expiry-days:14}")
     private long refreshExpiryDays;
+
+    @Value("${jwt.issuer:framework}")
+    private String issuer;
+
+    @Value("${jwt.access-ttl-seconds:1800}")   // 기본 30분
+    private long accessTtlSeconds;
+
+    @Value("${jwt.refresh-ttl-seconds:1209600}") // 기본 14일
+    private long refreshTtlSeconds;
 
     private SecretKey key;
 
@@ -37,28 +40,27 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createAccessToken(String subject, Map<String, Object> claims) {
+    public String createAccessToken(String userId, Map<String, Object> claims) {
         Instant now = Instant.now();
-        Instant exp = now.plusSeconds(accessExpiryMinutes * 60);
         return Jwts.builder()
-                .setIssuer(issuer)
-                .setSubject(subject)
-                .setClaims(claims)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(exp))
+                .subject(userId)                 // ★ 필수
+                .claims(claims)
+                .issuer(issuer)                  // 선택(파서에서 requireIssuer 쓰면 필수)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(accessTtlSeconds)))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-    public String createRefreshToken(String subject, Map<String, Object> claims) {
+    public String createRefreshToken(String userId, Map<String, Object> claims) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(refreshExpiryDays * 24 * 60 * 60);
         return Jwts.builder()
-                .setIssuer(issuer)
-                .setSubject(subject)
-                .setClaims(claims)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(exp))
+                .subject(userId)                 // ★ 필수
+                .claims(claims)
+                .issuer(issuer)                  // 선택(파서에서 requireIssuer 쓰면 필수)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(refreshTtlSeconds)))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
