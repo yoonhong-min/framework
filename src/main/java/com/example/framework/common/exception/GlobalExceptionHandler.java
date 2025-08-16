@@ -1,40 +1,46 @@
 package com.example.framework.common.exception;
 
-import com.example.framework.common.api.ApiResponse;
-import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.HttpStatus;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ApiResponse<?> handleValidation(MethodArgumentNotValidException ex) {
-        return ApiResponse.error("BAD_REQUEST", ex.getBindingResult().toString());
+    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex,
+            HttpServletRequest req) {
+        // JDK 설정이 낮아 .toList()가 안 되는 환경 대비 → Collectors.toList() 사용
+        List<Map<String, Object>> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(this::toError) // 아래 helper
+                .collect(Collectors.toList());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("code", "VALIDATION_ERROR");
+        body.put("message", "요청이 올바르지 않습니다");
+        body.put("errors", errors);
+        body.put("path", req.getRequestURI());
+        body.put("timestamp", Instant.now());
+
+        return ResponseEntity.badRequest().body(body);
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ApiResponse<?> handleConstraint(ConstraintViolationException ex) {
-        return ApiResponse.error("BAD_REQUEST", ex.getMessage());
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ApiResponse<?> handleBusiness(BusinessException ex) {
-        HttpStatus status = switch (ex.getCode()) {
-            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-            case FORBIDDEN -> HttpStatus.FORBIDDEN;
-            case NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case CONFLICT -> HttpStatus.CONFLICT;
-            case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
-        return ApiResponse.error(ex.getCode().name(), ex.getMessage());
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ApiResponse<?> handleOthers(Exception ex) {
-        return ApiResponse.error("INTERNAL_ERROR", ex.getMessage());
+    private Map<String, Object> toError(FieldError fe) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("field", fe.getField());
+        // 메시지 커스터마이징 원하면 여기서 처리
+        m.put("message", fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "invalid");
+        return m;
     }
 }

@@ -1,75 +1,76 @@
 package com.example.framework.security.jwt;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HexFormat;
 import java.util.Map;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secret;
-
-    @Value("${jwt.refresh-token.expiry-days:14}")
-    private long refreshExpiryDays;
-
-    @Value("${jwt.issuer:framework}")
-    private String issuer;
-
-    @Value("${jwt.access-ttl-seconds:1800}")   // 기본 30분
-    private long accessTtlSeconds;
-
-    @Value("${jwt.refresh-ttl-seconds:1209600}") // 기본 14일
-    private long refreshTtlSeconds;
+    private final JwtProps props;
 
     private SecretKey key;
 
     @PostConstruct
     void init() {
-        // 최소 256bit(HMAC-SHA) 보장: 운영은 충분히 긴 랜덤 문자열/키 사용
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes;
+        String secret = props.getSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("jwt.secret is required");
+        }
+        if (secret.startsWith("hex:")) {
+            keyBytes = HexFormat.of().parseHex(secret.substring(4));
+        } else {
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        }
+        // 256비트 이상 권장
+        if (keyBytes.length < 32) {
+            throw new IllegalArgumentException("JWT secret must be >= 256 bits (32 bytes).");
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+
+        if (props.getAccessTtlSeconds() <= 0 || props.getRefreshTtlSeconds() <= 0) {
+            throw new IllegalArgumentException("jwt.*-ttl-seconds must be > 0");
+        }
     }
 
     public String createAccessToken(String userId, Map<String, Object> claims) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .subject(userId)                 // ★ 필수
+                .subject(userId) // ★ 반드시 sub 설정
                 .claims(claims)
-                .issuer(issuer)                  // 선택(파서에서 requireIssuer 쓰면 필수)
+                .issuer(props.getIssuer())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(accessTtlSeconds)))
+                .expiration(Date.from(now.plusSeconds(props.getAccessTtlSeconds())))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
     public String createRefreshToken(String userId, Map<String, Object> claims) {
         Instant now = Instant.now();
-        Instant exp = now.plusSeconds(refreshExpiryDays * 24 * 60 * 60);
         return Jwts.builder()
-                .subject(userId)                 // ★ 필수
+                .subject(userId)
                 .claims(claims)
-                .issuer(issuer)                  // 선택(파서에서 requireIssuer 쓰면 필수)
+                .issuer(props.getIssuer())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(refreshTtlSeconds)))
+                .expiration(Date.from(now.plusSeconds(props.getRefreshTtlSeconds())))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-    public Jws<Claims> parse(String token) throws JwtException {
-        return Jwts.parser()
-                .requireIssuer(issuer)
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token);
+    public io.jsonwebtoken.Jws<Claims> parse(String token) {
+        // issuer를 강제하고 싶으면 .requireIssuer(props.getIssuer()) 추가
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
     }
 }
