@@ -64,4 +64,9 @@ public class UserService {
                     return base;
                 });
     }
+
+    public User findByIdOrThrow(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+    }
 }

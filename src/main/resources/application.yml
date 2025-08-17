@@ -8,6 +8,9 @@ spring:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
 
+  profiles:
+    active: local
+
   # OAuth2 로그인 설정은 프로필에서 provider/registration로 분리
   security:
     oauth2:

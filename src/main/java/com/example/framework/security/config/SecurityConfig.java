@@ -3,6 +3,7 @@ package com.example.framework.security.config;
 import com.example.framework.security.jwt.JwtAuthFilter;
 import com.example.framework.security.jwt.JwtService;
 import com.example.framework.security.oauth.OAuth2SuccessHandler;
+import com.example.framework.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +26,12 @@ public class SecurityConfig {
     private final JwtService jwtService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public JwtAuthFilter jwtAuthFilter(JwtService jwtService, UserService userService) { // ★ 두 서비스 주입
+        return new JwtAuthFilter(jwtService, userService);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -40,9 +46,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth -> oauth.successHandler(oAuth2SuccessHandler));
+                .oauth2Login(oauth -> oauth.successHandler(oAuth2SuccessHandler))
+                .headers(h -> h.frameOptions(f -> f.sameOrigin()));
 
-        http.addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
