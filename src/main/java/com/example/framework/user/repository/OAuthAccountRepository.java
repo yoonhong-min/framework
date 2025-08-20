@@ -1,5 +1,6 @@
-package com.example.framework.user;
+package com.example.framework.user.repository;
 
+import com.example.framework.user.entity.OAuthAccount;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

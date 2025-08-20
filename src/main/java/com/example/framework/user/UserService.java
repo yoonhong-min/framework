@@ -1,5 +1,9 @@
 package com.example.framework.user;
 
+import com.example.framework.user.entity.OAuthAccount;
+import com.example.framework.user.entity.User;
+import com.example.framework.user.repository.OAuthAccountRepository;
+import com.example.framework.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

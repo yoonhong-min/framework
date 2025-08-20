@@ -1,4 +1,4 @@
-package com.example.framework.user;
+package com.example.framework.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

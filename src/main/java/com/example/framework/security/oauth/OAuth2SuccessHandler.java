@@ -1,7 +1,7 @@
 package com.example.framework.security.oauth;
 
 import com.example.framework.security.jwt.JwtService;
-import com.example.framework.user.User;
+import com.example.framework.user.entity.User;
 import com.example.framework.user.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

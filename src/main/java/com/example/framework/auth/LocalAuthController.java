@@ -2,7 +2,7 @@ package com.example.framework.auth;
 
 import com.example.framework.common.api.ApiResponse;
 import com.example.framework.security.jwt.JwtService;
-import com.example.framework.user.User;
+import com.example.framework.user.entity.User;
 import com.example.framework.user.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
