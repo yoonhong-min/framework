@@ -41,7 +41,8 @@ public class SecurityConfig {
                                 "/oauth2/**", "/auth/refresh",
                                 "/api/public/**",      // 로컬 회원가입/로그인
                                 "/api/me",              // 건강 체크
-                                "/h2-console/**"        // 로컬 db테스트
+                                "/h2-console/**",        // 로컬 db테스트
+                                "/files/**"             // 파일
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()

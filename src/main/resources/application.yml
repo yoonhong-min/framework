@@ -1,3 +1,8 @@
+app:
+  file:
+    upload-root: /var/www/uploads        # 로컬 저장 루트 (개발: ./uploads)
+    public-base-url: http://localhost:8080/files # 정적 서빙용(옵션)
+
 spring:
   application:
     name: demo-framework
@@ -7,6 +12,11 @@ spring:
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 40MB
 
   profiles:
     active: local
@@ -76,3 +86,16 @@ logging:
   level:
     root: INFO
     org.springframework.security: INFO
+
+
+file:
+  storage:
+    base-dir: ${USER_HOME}/framework-uploads   # C:\Users\계정\framework-uploads
+    public-url-prefix: /files                  # 정적 서빙 URL prefix
+    allowed-content-types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - application/pdf
+      - video/mp4
+      - text/plain
